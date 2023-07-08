@@ -1,9 +1,11 @@
 import json
 
 class User:
-    def __init__(self, full_name, email):
-        self.full_name = full_name
-        self.email = email
+    def __init__(self, wallet, name, keypc, keype):
+        self.wallet = wallet
+        self.name = name
+        self.keypc = keypc
+        self.keype = keype
 
     def to_dict(self):
         return {'full_name': self.full_name, 'email': self.email}
