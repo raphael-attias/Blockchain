@@ -90,48 +90,39 @@ class Blockchain:
         else:
             return None
 
-    def effectuer_transaction(self, sender_address, recipient_address, amount):
-        sender_id, sender_data = self.get_user_data_by_address(sender_address)
-        recipient_data = self.get_user_data_by_address(recipient_address)
+    def add_transaction(self, sender, recipient, amount):
+        if sender not in self.users or recipient not in self.users:
+            return False  # Invalid sender or recipient
 
-        if sender_data and recipient_data:
-            sender_balance = sender_data['token_balance']
-            if sender_balance >= amount:
-            # Vérification de la signature
-                if self.verify_signature(sender_data['public_key'], sender_address):
-                # Mettez ici votre logique de transaction
-                    sender_data['token_balance'] -= amount
-                    recipient_data['token_balance'] += amount
+        sender_data = self.users[sender]
+        recipient_data = self.users[recipient]
 
-                # Récompense pour la signature valide
-                    self.reward_sender(sender_id)
+        if sender_data['token_balance'] < amount:
+            return False  # Insufficient balance
 
-                    return True
-        return False
+        transaction = {
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount
+        }
 
+        self.chain[-1]['transactions'].append(transaction)
 
+        # Update token balances
+        sender_data['token_balance'] -= amount
+        recipient_data['token_balance'] += amount
 
-    def get_user_data_by_address(self, address):
-        for user_id, user_data in self.users.items():
-            if user_data['address'] == address:
-               return user_id, user_data
-        return None, None
+        return True  # Transaction successful
 
-    def verify_signature(self, public_key, address):
-        # Votre logique de vérification de signature ici
-        # Comparer la signature avec le hash du bloc en utilisant la clé publique et l'adresse
+    def mine_block(self, miner):
+        last_block = self.get_last_block()
+        previous_hash = self.hash_block(last_block)
 
-        # Exemple de vérification simplifiée : Comparer la somme des caractères de la clé publique avec le hash
-        signature_hash = sum(ord(c) for c in public_key + address)
-        target_hash = 2 * 10  # Difficulté de hash fixée à 2
-        return signature_hash >= target_hash
+        self.add_block(previous_hash, user_id=miner)
 
-    def reward_sender(self, user_id):
-        # Votre logique de récompense ici
-        # Récompenser l'envoyeur avec une quantité fixe de tokens (2.5 dans ce cas)
-        reward_amount = 2.5
-        self.users[user_id]['token_balance'] += reward_amount
-
+        # Reset token balances after mining
+        for user_data in self.users.values():
+            user_data['token_balance'] = 0
 
 # Fonction pour générer les clés et l'adresse
 def generate_keys_and_address():
@@ -141,7 +132,6 @@ def generate_keys_and_address():
     address = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
 
     return public_key, private_key, address
-
 
 # Programme principal
 if __name__ == '__main__':
@@ -156,7 +146,10 @@ if __name__ == '__main__':
     while True:
         print("1. Se connecter avec un nom d'utilisateur existant")
         print("2. Créer un nouveau profil utilisateur")
-        print("3. Quitter")
+        print("3. Faire une transaction")
+        print("4. Afficher la blockchain")
+        print("5. Miner un nouveau bloc")
+        print("6. Quitter")
         choice = input("Choisissez une option : ")
 
         if choice == "1":
@@ -164,38 +157,10 @@ if __name__ == '__main__':
             user_data = blockchain.get_user_data(user_id)
             if user_data:
                 print(f"Bienvenue, {user_id} !")
+
                 print("Clé publique :", user_data['public_key'])
                 print("Clé privée :", user_data['private_key'])
                 print("Adresse :", user_data['address'])
-                while True:
-                    print("\nMenu de transactions :")
-                    print("1. Faire une transaction")
-                    print("2. Voir le solde de tokens")
-                    print("3. Afficher la blockchain")
-                    print("4. Déconnecter")
-                    transaction_choice = input("Choisissez une option : ")
-                    if transaction_choice == "1":
-                        recipient_address = input("Entrez l'adresse du destinataire : ")
-                        amount = float(input("Entrez le montant de la transaction : "))
-                        sender_address = user_data['address']
-
-                        if blockchain.effectuer_transaction(sender_address, recipient_address, amount):
-                            print("Transaction réussie.")
-                        else:
-                            print("Transaction échouée. Solde insuffisant, adresse invalide ou signature invalide.")
-
-                    elif transaction_choice == "2":
-                        token_balance = blockchain.get_token_balance(user_id)
-                        if token_balance is not None:
-                            print(f"Solde de tokens pour l'utilisateur {user_id} : {token_balance}")
-                        else:
-                            print("Utilisateur non trouvé.")
-                    elif transaction_choice == "3":
-                        blockchain.print_blockchain()
-                    elif transaction_choice == "4":
-                        break
-                    else:
-                        print("Option invalide. Veuillez choisir une option valide.")
             else:
                 print("Utilisateur non enregistré.")
         elif choice == "2":
@@ -211,6 +176,25 @@ if __name__ == '__main__':
             else:
                 print("L'utilisateur est déjà enregistré.")
         elif choice == "3":
+            sender = input("Entrez l'identifiant de l'expéditeur : ")
+            recipient = input("Entrez l'identifiant du destinataire : ")
+            amount = float(input("Entrez le montant de la transaction : "))
+
+            if blockchain.add_transaction(sender, recipient, amount):
+                print("Transaction ajoutée avec succès.")
+            else:
+                print("Erreur lors de la transaction. Vérifiez les identifiants et le solde de l'expéditeur.")
+        elif choice == "4":
+            blockchain.print_blockchain()
+        elif choice == "5":
+            miner = input("Entrez l'identifiant du mineur : ")
+            blockchain.mine_block(miner)
+            print("Nouveau bloc miné avec succès.")
+        elif choice == "6":
             break
         else:
-            print("Option invalide.")
+            print("Option invalide. Veuillez choisir une option valide.")
+
+        print("=" * 50)
+
+    blockchain.print_blockchain()

@@ -90,49 +90,6 @@ class Blockchain:
         else:
             return None
 
-    def effectuer_transaction(self, sender_address, recipient_address, amount):
-        sender_id, sender_data = self.get_user_data_by_address(sender_address)
-        recipient_data = self.get_user_data_by_address(recipient_address)
-
-        if sender_data and recipient_data:
-            sender_balance = sender_data['token_balance']
-            if sender_balance >= amount:
-            # Vérification de la signature
-                if self.verify_signature(sender_data['public_key'], sender_address):
-                # Mettez ici votre logique de transaction
-                    sender_data['token_balance'] -= amount
-                    recipient_data['token_balance'] += amount
-
-                # Récompense pour la signature valide
-                    self.reward_sender(sender_id)
-
-                    return True
-        return False
-
-
-
-    def get_user_data_by_address(self, address):
-        for user_id, user_data in self.users.items():
-            if user_data['address'] == address:
-               return user_id, user_data
-        return None, None
-
-    def verify_signature(self, public_key, address):
-        # Votre logique de vérification de signature ici
-        # Comparer la signature avec le hash du bloc en utilisant la clé publique et l'adresse
-
-        # Exemple de vérification simplifiée : Comparer la somme des caractères de la clé publique avec le hash
-        signature_hash = sum(ord(c) for c in public_key + address)
-        target_hash = 2 * 10  # Difficulté de hash fixée à 2
-        return signature_hash >= target_hash
-
-    def reward_sender(self, user_id):
-        # Votre logique de récompense ici
-        # Récompenser l'envoyeur avec une quantité fixe de tokens (2.5 dans ce cas)
-        reward_amount = 2.5
-        self.users[user_id]['token_balance'] += reward_amount
-
-
 # Fonction pour générer les clés et l'adresse
 def generate_keys_and_address():
     # Generate random keys
@@ -141,7 +98,6 @@ def generate_keys_and_address():
     address = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
 
     return public_key, private_key, address
-
 
 # Programme principal
 if __name__ == '__main__':
@@ -175,15 +131,8 @@ if __name__ == '__main__':
                     print("4. Déconnecter")
                     transaction_choice = input("Choisissez une option : ")
                     if transaction_choice == "1":
-                        recipient_address = input("Entrez l'adresse du destinataire : ")
-                        amount = float(input("Entrez le montant de la transaction : "))
-                        sender_address = user_data['address']
-
-                        if blockchain.effectuer_transaction(sender_address, recipient_address, amount):
-                            print("Transaction réussie.")
-                        else:
-                            print("Transaction échouée. Solde insuffisant, adresse invalide ou signature invalide.")
-
+                        print("Traitement de la transaction...")
+                        # Effectuer la logique de traitement de la transaction ici
                     elif transaction_choice == "2":
                         token_balance = blockchain.get_token_balance(user_id)
                         if token_balance is not None:
@@ -213,4 +162,4 @@ if __name__ == '__main__':
         elif choice == "3":
             break
         else:
-            print("Option invalide.")
+            print("Option invalide.Le code a été corrigé selon vos demandes. Maintenant, l'utilisateur peut vérifier son solde de tokens en choisissant l'option correspondante dans le menu des transactions.")
